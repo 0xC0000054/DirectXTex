@@ -342,25 +342,12 @@ namespace
         const auto dwMagicNumber = *static_cast<const uint32_t*>(pSource);
         if (dwMagicNumber != DDS_MAGIC)
         {
-            return E_FAIL;
+            return HRESULT_E_INVALID_DATA;
         }
 
         auto pHeader = reinterpret_cast<const DDS_HEADER*>(static_cast<const uint8_t*>(pSource) + sizeof(uint32_t));
 
         // Verify header to validate DDS file
-        if (flags & DDS_FLAGS_PERMISSIVE)
-        {
-            if (pHeader->size != 24 /* Known variant */
-                && pHeader->size != sizeof(DDS_HEADER))
-            {
-                return HRESULT_E_NOT_SUPPORTED;
-            }
-        }
-        else if (pHeader->size != sizeof(DDS_HEADER))
-        {
-            return HRESULT_E_NOT_SUPPORTED;
-        }
-
         if (flags & DDS_FLAGS_PERMISSIVE)
         {
             if (pHeader->ddspf.size != 0 /* Known variant */
@@ -389,13 +376,13 @@ namespace
                 || pHeader->ddspf.size != sizeof(DDS_PIXELFORMAT))
             {
                 // We do not accept legacy DX9 'known variants' for modern "DX10" extension header files.
-                return E_FAIL;
+                return HRESULT_E_INVALID_DATA;
             }
 
             // Buffer must be big enough for both headers and magic value
             if (size < DDS_DX10_HEADER_SIZE)
             {
-                return E_FAIL;
+                return HRESULT_E_INVALID_DATA;
             }
 
             auto d3d10ext = reinterpret_cast<const DDS_HEADER_DXT10*>(static_cast<const uint8_t*>(pSource) + DDS_MIN_HEADER_SIZE);
