@@ -529,6 +529,16 @@ namespace DirectX
     };
 
     //---------------------------------------------------------------------------------
+
+    // User-defined I/O callbacks for loading and saving images
+    struct ImageIOCallbacks
+    {
+        DWORD(__stdcall *Read)(void* buffer, const DWORD count);
+        DWORD(__stdcall *Write)(const void* buffer, const DWORD count);
+        INT64(__stdcall *Seek)(const INT64 position, const INT32 origin);
+        INT64(__stdcall *GetSize)();
+    };
+
     // Tiling utilities
 
     struct DIRECTX_TEX_API TileShape
@@ -585,6 +595,9 @@ namespace DirectX
         _In_z_ const wchar_t* szFile,
         _In_ DDS_FLAGS flags,
         _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image) noexcept;
+    HRESULT __cdecl LoadFromDDSIOCallbacks(
+        _In_ const ImageIOCallbacks* pIOCallbacks, _In_ DDS_FLAGS flags,
+        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
 
     DIRECTX_TEX_API HRESULT __cdecl LoadFromDDSMemoryEx(
         _In_reads_bytes_(size) const uint8_t* pSource, _In_ size_t size,
@@ -612,6 +625,11 @@ namespace DirectX
     DIRECTX_TEX_API HRESULT __cdecl SaveToDDSFile(
         _In_reads_(nimages) const Image* images, _In_ size_t nimages, _In_ const TexMetadata& metadata,
         _In_ DDS_FLAGS flags, _In_z_ const wchar_t* szFile) noexcept;
+
+    HRESULT __cdecl SaveToDDSIOCallbacks(
+        _In_reads_(nimages) const Image* images, _In_ size_t nimages, _In_ const TexMetadata& metadata,
+        _In_ DDS_FLAGS flags,
+        _In_ const ImageIOCallbacks* pIOCallbacks);
 
     // HDR operations
     DIRECTX_TEX_API HRESULT __cdecl LoadFromHDRMemory(
