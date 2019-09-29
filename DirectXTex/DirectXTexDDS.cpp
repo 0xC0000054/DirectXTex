@@ -2399,7 +2399,13 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
 
     // Get the file size
     LARGE_INTEGER fileSize;
-    fileSize.QuadPart = pIOCallbacks->GetSize();
+
+    HRESULT hr = pIOCallbacks->GetSize(&fileSize.QuadPart);
+
+    if (FAILED(hr))
+    {
+        return hr;
+    }
 
     // File is too big for 32-bit allocation, so reject read (4 GB should be plenty large enough for a valid DDS file)
     if (fileSize.HighPart > 0)
@@ -2417,11 +2423,18 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
     const size_t MAX_HEADER_SIZE = sizeof(uint32_t) + sizeof(DDS_HEADER) + sizeof(DDS_HEADER_DXT10);
     uint8_t header[MAX_HEADER_SIZE] = {};
 
-    DWORD bytesRead = pIOCallbacks->Read(header, MAX_HEADER_SIZE);
+    DWORD bytesRead = 0;
+
+    hr = pIOCallbacks->Read(header, MAX_HEADER_SIZE, &bytesRead);
+
+    if (FAILED(hr))
+    {
+        return hr;
+    }
 
     uint32_t convFlags = 0;
     TexMetadata mdata;
-    HRESULT hr = DecodeDDSHeader(header, bytesRead, flags, mdata, convFlags);
+    hr = DecodeDDSHeader(header, bytesRead, flags, mdata, convFlags);
     if (FAILED(hr))
         return hr;
 
@@ -2430,10 +2443,11 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
     if (!(convFlags & CONV_FLAGS_DX10))
     {
         // Must reset file position since we read more than the standard header above
-        const INT64 newOffset = sizeof(uint32_t) + sizeof(DDS_HEADER);
-        if (pIOCallbacks->Seek(newOffset, FILE_BEGIN) != newOffset)
+        hr = pIOCallbacks->Seek(sizeof(uint32_t) + sizeof(DDS_HEADER), FILE_BEGIN);
+
+        if (FAILED(hr))
         {
-            return HRESULT_FROM_WIN32(ERROR_SEEK_ON_DEVICE);
+            return hr;
         }
 
         offset = sizeof(uint32_t) + sizeof(DDS_HEADER);
@@ -2448,7 +2462,12 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
             return E_OUTOFMEMORY;
         }
 
-        bytesRead = pIOCallbacks->Read(pal8.get(), 256 * sizeof(uint32_t));
+        hr = pIOCallbacks->Read(pal8.get(), 256 * sizeof(uint32_t), &bytesRead);
+
+        if (FAILED(hr))
+        {
+            return hr;
+        }
 
         if (bytesRead != (256 * sizeof(uint32_t)))
         {
@@ -2475,7 +2494,13 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
             return E_OUTOFMEMORY;
         }
 
-        bytesRead = pIOCallbacks->Read(temp.get(), remaining);
+        hr = pIOCallbacks->Read(temp.get(), remaining, &bytesRead);
+
+        if (FAILED(hr))
+        {
+            image.Release();
+            return hr;
+        }
 
         if (bytesRead != remaining)
         {
@@ -2522,7 +2547,15 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
 
         const DWORD pixelSize = static_cast<DWORD>(image.GetPixelsSize());
 
-        if (pIOCallbacks->Read(image.GetPixels(), pixelSize) != pixelSize)
+        hr = pIOCallbacks->Read(image.GetPixels(), pixelSize, &bytesRead);
+
+        if (FAILED(hr))
+        {
+            image.Release();
+            return hr;
+        }
+
+        if (bytesRead != pixelSize)
         {
             image.Release();
             return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
@@ -3251,7 +3284,14 @@ HRESULT DirectX::SaveToDDSIOCallbacks(
     if (FAILED(hr))
         return hr;
 
-    DWORD bytesWritten = pIOCallbacks->Write(header, static_cast<DWORD>(required));
+    DWORD bytesWritten = 0;
+
+    hr = pIOCallbacks->Write(header, static_cast<DWORD>(required), &bytesWritten);
+
+    if (FAILED(hr))
+    {
+        return hr;
+    }
 
     if (bytesWritten != required)
     {
@@ -3285,7 +3325,12 @@ HRESULT DirectX::SaveToDDSIOCallbacks(
 
                 if ((images[index].slicePitch == ddsSlicePitch) && (ddsSlicePitch <= UINT32_MAX))
                 {
-                    bytesWritten = pIOCallbacks->Write(images[index].pixels, static_cast<DWORD>(ddsSlicePitch));
+                    hr = pIOCallbacks->Write(images[index].pixels, static_cast<DWORD>(ddsSlicePitch), &bytesWritten);
+
+                    if (FAILED(hr))
+                    {
+                        return hr;
+                    }
 
                     if (bytesWritten != ddsSlicePitch)
                     {
@@ -3309,7 +3354,12 @@ HRESULT DirectX::SaveToDDSIOCallbacks(
                     size_t lines = ComputeScanlines(metadata.format, images[index].height);
                     for (size_t j = 0; j < lines; ++j)
                     {
-                        bytesWritten = pIOCallbacks->Write(sPtr, static_cast<DWORD>(ddsRowPitch));
+                        hr = pIOCallbacks->Write(sPtr, static_cast<DWORD>(ddsRowPitch), &bytesWritten);
+
+                        if (FAILED(hr))
+                        {
+                            return hr;
+                        }
 
                         if (bytesWritten != ddsRowPitch)
                         {
@@ -3352,7 +3402,12 @@ HRESULT DirectX::SaveToDDSIOCallbacks(
 
                 if ((images[index].slicePitch == ddsSlicePitch) && (ddsSlicePitch <= UINT32_MAX))
                 {
-                    bytesWritten = pIOCallbacks->Write(images[index].pixels, static_cast<DWORD>(ddsSlicePitch));
+                    hr = pIOCallbacks->Write(images[index].pixels, static_cast<DWORD>(ddsSlicePitch), &bytesWritten);
+
+                    if (FAILED(hr))
+                    {
+                        return hr;
+                    }
 
                     if (bytesWritten != ddsSlicePitch)
                     {
@@ -3376,7 +3431,12 @@ HRESULT DirectX::SaveToDDSIOCallbacks(
                     size_t lines = ComputeScanlines(metadata.format, images[index].height);
                     for (size_t j = 0; j < lines; ++j)
                     {
-                        bytesWritten = pIOCallbacks->Write(sPtr, static_cast<DWORD>(ddsRowPitch));
+                        hr = pIOCallbacks->Write(sPtr, static_cast<DWORD>(ddsRowPitch), &bytesWritten);
+
+                        if (FAILED(hr))
+                        {
+                            return hr;
+                        }
 
                         if (bytesWritten != ddsRowPitch)
                         {
