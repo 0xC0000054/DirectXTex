@@ -342,7 +342,7 @@ namespace
         const auto dwMagicNumber = *static_cast<const uint32_t*>(pSource);
         if (dwMagicNumber != DDS_MAGIC)
         {
-            return HRESULT_E_INVALID_DATA;
+            return HRESULT_FROM_WIN32(ERROR_BAD_FORMAT);
         }
 
         auto pHeader = reinterpret_cast<const DDS_HEADER*>(static_cast<const uint8_t*>(pSource) + sizeof(uint32_t));
