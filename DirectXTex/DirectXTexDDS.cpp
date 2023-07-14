@@ -2297,6 +2297,7 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
     const ImageIOCallbacks* pIOCallbacks,
     DirectX::DDS_FLAGS flags,
     TexMetadata* metadata,
+    DDSMetaData* ddPixelFormat,
     ScratchImage& image)
 {
     if (!pIOCallbacks)
@@ -2347,7 +2348,7 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
 
     uint32_t convFlags = 0;
     TexMetadata mdata;
-    hr = DecodeDDSHeader(header, headerLength, flags, mdata, convFlags);
+    hr = DecodeDDSHeader(header, headerLength, flags, mdata, ddPixelFormat, convFlags);
     if (FAILED(hr))
         return hr;
 
