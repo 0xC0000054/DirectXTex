@@ -533,8 +533,8 @@ namespace DirectX
     // User-defined I/O callbacks for loading and saving images
     struct ImageIOCallbacks
     {
-        HRESULT(__stdcall *Read)(void* buffer, const DWORD count, DWORD* bytesRead);
-        HRESULT(__stdcall *Write)(const void* buffer, const DWORD count, DWORD* bytesWritten);
+        HRESULT(__stdcall *Read)(void* buffer, const DWORD count);
+        HRESULT(__stdcall *Write)(const void* buffer, const DWORD count);
         HRESULT(__stdcall *Seek)(const INT64 position, const INT32 origin);
         HRESULT(__stdcall *GetSize)(INT64* size);
     };
