@@ -597,7 +597,9 @@ namespace DirectX
         _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image) noexcept;
     HRESULT __cdecl LoadFromDDSIOCallbacks(
         _In_ const ImageIOCallbacks* pIOCallbacks, _In_ DDS_FLAGS flags,
-        _Out_opt_ TexMetadata* metadata, _Out_ ScratchImage& image);
+        _Out_opt_ TexMetadata* metadata,
+        _Out_opt_ DDSMetaData* ddPixelFormat,
+        _Out_ ScratchImage& image);
 
     DIRECTX_TEX_API HRESULT __cdecl LoadFromDDSMemoryEx(
         _In_reads_bytes_(size) const uint8_t* pSource, _In_ size_t size,
