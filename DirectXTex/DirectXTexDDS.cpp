@@ -2415,17 +2415,16 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
     }
 
     // Need at least enough data to fill the standard header and magic number to be a valid DDS
-    if (fileSize.LowPart < (sizeof(DDS_HEADER) + sizeof(uint32_t)))
+    if (fileSize.LowPart < DDS_MIN_HEADER_SIZE)
     {
         return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
     }
 
     // Read the header in (including extended header if present)
-    const size_t MAX_HEADER_SIZE = sizeof(uint32_t) + sizeof(DDS_HEADER) + sizeof(DDS_HEADER_DXT10);
-    uint8_t header[MAX_HEADER_SIZE] = {};
-    size_t headerLength = MAX_HEADER_SIZE;
+    uint8_t header[DDS_DX10_HEADER_SIZE] = {};
+    size_t headerLength = DDS_DX10_HEADER_SIZE;
 
-    hr = pIOCallbacks->Read(header, MAX_HEADER_SIZE);
+    hr = pIOCallbacks->Read(header, DDS_DX10_HEADER_SIZE);
 
     if (FAILED(hr))
     {
@@ -2445,12 +2444,12 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
     if (FAILED(hr))
         return hr;
 
-    DWORD offset = MAX_HEADER_SIZE;
+    DWORD offset = DDS_DX10_HEADER_SIZE;
 
     if (!(convFlags & CONV_FLAGS_DX10))
     {
         // Must reset file position since we read more than the standard header above
-        hr = pIOCallbacks->Seek(sizeof(uint32_t) + sizeof(DDS_HEADER), FILE_BEGIN);
+        hr = pIOCallbacks->Seek(DDS_MIN_HEADER_SIZE, FILE_BEGIN);
 
         if (FAILED(hr))
         {
@@ -2551,7 +2550,7 @@ HRESULT DirectX::LoadFromDDSIOCallbacks(
             return hr;
         }
 
-        if (convFlags & (CONV_FLAGS_SWIZZLE | CONV_FLAGS_NOALPHA))
+        if (convFlags & (CONV_FLAGS_SWIZZLE | CONV_FLAGS_NOALPHA | CONV_FLAGS_L8U8V8 | CONV_FLAGS_WUV10))
         {
             // Swizzle/copy image in place
             hr = CopyImageInPlace(convFlags, image);
@@ -3267,10 +3266,9 @@ HRESULT DirectX::SaveToDDSIOCallbacks(
         return E_INVALIDARG;
 
     // Create DDS Header
-    const size_t MAX_HEADER_SIZE = sizeof(uint32_t) + sizeof(DDS_HEADER) + sizeof(DDS_HEADER_DXT10);
-    uint8_t header[MAX_HEADER_SIZE];
+    uint8_t header[DDS_DX10_HEADER_SIZE];
     size_t required;
-    HRESULT hr = EncodeDDSHeader(metadata, flags, header, MAX_HEADER_SIZE, required);
+    HRESULT hr = EncodeDDSHeader(metadata, flags, header, DDS_DX10_HEADER_SIZE, required);
     if (FAILED(hr))
         return hr;
 
